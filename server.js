@@ -1,5 +1,5 @@
 const express = require('express');
-const { S3Client, PutObjectCommand,ListObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand,ListObjectsCommand, GetObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const bodyParser = require('body-parser');
 const stream = require('stream');
 const { parse } = require('csv-parse/sync'); // Library for parsing CSV
@@ -105,8 +105,6 @@ app.post('/upload/audio', async (req, res) => {
 });
 
 app.post('/upload/data', async (req, res) => {
-    const data_dir = `${req.body.userUUID}/`;
-
     console.log("Server: " + req.body.userUUID);
 
     try {
@@ -121,8 +119,24 @@ app.post('/upload/data', async (req, res) => {
             ? participantID.replace(/[^a-zA-Z0-9_-]/g, "")
             : req.body.userUUID;
 
-        // Create the output filename
-        const fileName = `${data_dir}${fileStem}_attributions.csv`;
+        // Preferred location: participantID/participantID_attributions.csv
+        let data_dir = `${fileStem}/`;
+        let fileName = `${data_dir}${fileStem}_attributions.csv`;
+
+        // If that file already exists, save under a UUID-specific folder instead
+        try {
+            await s3.send(new HeadObjectCommand({
+                Bucket: bucketName,
+                Key: fileName
+            }));
+
+            data_dir = `${fileStem}_${req.body.userUUID}/`;
+            fileName = `${data_dir}${fileStem}_attributions.csv`;
+
+            console.log("Duplicate participant ID detected. Saving to:", fileName);
+        } catch (headErr) {
+            console.log("No existing file found. Saving to:", fileName);
+        }
 
         // Add the participantUUID column to each row
         records = records.map(row => ({
