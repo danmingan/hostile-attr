@@ -107,18 +107,27 @@ app.post('/upload/audio', async (req, res) => {
 app.post('/upload/data', async (req, res) => {
     const data_dir = `${req.body.userUUID}/`;
 
-    console.log("Server: " + req.body.userUUID)
-
-    const fileName = data_dir + `atom.csv`; // Generate a unique file name
+    console.log("Server: " + req.body.userUUID);
 
     try {
         // Parse the CSV string into rows
         let records = parse(req.body.csvString, { columns: true });
 
-        // Add the 'participantUUID' column to each row
+        // Get the participant ID from the first row
+        const participantID = records[0]?.participantID?.trim();
+
+        // Use participant ID if available; otherwise fall back to UUID
+        const fileStem = participantID && participantID.length > 0
+            ? participantID.replace(/[^a-zA-Z0-9_-]/g, "")
+            : req.body.userUUID;
+
+        // Create the output filename
+        const fileName = `${data_dir}${fileStem}_attributions.csv`;
+
+        // Add the participantUUID column to each row
         records = records.map(row => ({
             ...row,
-            participantUUID: req.body.userUUID // Add the new UUID for each row
+            participantUUID: req.body.userUUID
         }));
 
         // Convert the updated data back to CSV format
@@ -134,10 +143,18 @@ app.post('/upload/data', async (req, res) => {
 
         // Upload the CSV to S3
         const data = await s3.send(new PutObjectCommand(params));
-        res.json({ message: 'Data uploaded successfully', data });
+
+        res.json({
+            message: 'Data uploaded successfully',
+            fileName: fileName,
+            data
+        });
     } catch (err) {
         console.error('Error uploading data:', err);
-        res.status(500).json({ error: 'Error uploading data', details: err });
+        res.status(500).json({
+            error: 'Error uploading data',
+            details: err
+        });
     }
 });
 
