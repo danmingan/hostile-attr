@@ -264,43 +264,30 @@
         });
 
         let participantID = null;
-        jsPsych.data.addProperties({ participantID: participantID });
-
+        
         // Wait for user to enter ID before running jsPsych
         document.getElementById('start-btn').addEventListener('click', () => {
-        const input = document.getElementById('participant-id').value.trim();
-        const errorMsg = document.getElementById('error-msg');
-
-        if (/^\d{3}$/.test(input)) {
-            participantID = parseInt(input, 10);
-            console.log("Participant ID:", participantID);
-
-            // Hide participant entry, show jsPsych container
-            document.getElementById('participant-page').style.display = 'none';
-            document.getElementById('jspsych-target').style.display = 'block';
-
-            startButton.addEventListener("click", function () {
-
-            // existing setup code
+            const input = document.getElementById('participant-id').value.trim();
+            const errorMsg = document.getElementById('error-msg');
         
-            const participantID =
-                document.getElementById("participant-id").value.trim();
+            if (/^\d{3}$/.test(input)) {
+                participantID = input;
         
-            jsPsych.data.addProperties({
-                participantID: participantID
-            });
-
-            // Start the experiment
-            jsPsych.run(timeline);
-
-            jsPsych.onFinish(() => {
-            console.log("Experiment finished — stopping recording...");
-            stopRecording();
-            });
-            
-        } else {
-            errorMsg.textContent = "Please enter a valid 3-digit ID (e.g., 123).";
-        }
+                console.log("Participant ID:", participantID);
+        
+                jsPsych.data.addProperties({
+                    participantID: participantID
+                });
+        
+                // Hide participant entry, show jsPsych container
+                document.getElementById('participant-page').style.display = 'none';
+                document.getElementById('jspsych-target').style.display = 'block';
+        
+                // Start the experiment
+                jsPsych.run(timeline);
+            } else {
+                errorMsg.textContent = "Please enter a valid 3-digit ID (e.g., 123).";
+            }
         });
     </script>
 </body>
