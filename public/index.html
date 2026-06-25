@@ -279,6 +279,17 @@
             document.getElementById('participant-page').style.display = 'none';
             document.getElementById('jspsych-target').style.display = 'block';
 
+            startButton.addEventListener("click", function () {
+
+            // existing setup code
+        
+            const participantID =
+                document.getElementById("participant-id").value.trim();
+        
+            jsPsych.data.addProperties({
+                participantID: participantID
+            });
+
             // Start the experiment
             jsPsych.run(timeline);
 
